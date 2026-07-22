@@ -1,3 +1,4 @@
+// Package main application's entrypoint.
 package main
 
 import (
@@ -6,32 +7,28 @@ import (
 
 	"github.com/devxdh/pulse/internal/cfg"
 	"github.com/devxdh/pulse/pkg/db"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
-	pool := StartDB()
-}
-
-func StartDB() *pgxpool.Pool {
 	fmt.Println("Starting Pulse API...")
 
 	cfg.LoadEnv()
-
 	dbURL, err := cfg.GetEnv("DATABASE_URL")
 	if err != nil {
-		log.Fatalf("Startup Failed: %v", err)
+		log.Fatalf("Configuration Error: %v", err)
 	}
 
 	pool, err := db.InitDB(dbURL)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+	defer pool.Close()
 
-	err = db.InjectDDL(pool)
-	if err != nil {
-		log.Fatalf("%v", err)
+	db.InjectDDL(pool)
+
+	app := &application{
+		db: pool,
 	}
 
-	return pool
+	app.startServer()
 }

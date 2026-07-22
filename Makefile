@@ -1,7 +1,7 @@
 DB_SERVICE_NAME=postgres
 
 start: check-db
-	go run cmd/api/main.go
+	go run ./cmd/api
 
 check-db:
 	@echo "Checking database status..."

@@ -3,7 +3,7 @@ services:
     image: postgres:18-alpine
     container_name: pulse_db
     environment:
-      - POSTGERS_USER=postgres
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=pulse_db
     healthcheck:
