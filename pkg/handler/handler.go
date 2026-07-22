@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,11 +35,6 @@ func (e *Env) HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *Env) CreateJob(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	defer r.Body.Close()
 
 	var req struct {
@@ -59,7 +55,7 @@ func (e *Env) CreateJob(w http.ResponseWriter, r *http.Request) {
 		RETURNING ID, status
 	`
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 
 	var resID int
@@ -84,4 +80,46 @@ func (e *Env) CreateJob(w http.ResponseWriter, r *http.Request) {
 		Status:  resStatus,
 		Payload: req.Payload,
 	})
+}
+
+func (e *Env) GetJobByID(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		http.Error(w, "Missing job ID", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid job ID: id must be an integer", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT id, status, payload, created_at, updated_at
+		FROM jobs
+		WHERE id=$1
+	`
+
+	var job Job
+	err = e.DB.QueryRow(ctx, query, id).Scan(
+		&job.ID,
+		&job.Status,
+		&job.Payload,
+		&job.CreatedAt,
+		&job.UpdatedAt,
+	)
+
+	if err != nil {
+		log.Printf("[DB ERROR] job query failed: %v", err)
+		http.Error(w, fmt.Sprintf("Job not found: %v", err), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(job)
 }
