@@ -15,7 +15,8 @@ import (
 )
 
 type Env struct {
-	DB *pgxpool.Pool
+	DB       *pgxpool.Pool
+	JobQueue chan int64
 }
 
 type Job struct {
@@ -26,8 +27,11 @@ type Job struct {
 	UpdatedAt time.Time       `json:"updated_at"`
 }
 
-func New(db *pgxpool.Pool) *Env {
-	return &Env{DB: db}
+func New(db *pgxpool.Pool, queueSize int) *Env {
+	return &Env{
+		DB:       db,
+		JobQueue: make(chan int64, queueSize),
+	}
 }
 
 func (e *Env) HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -67,6 +71,8 @@ func (e *Env) CreateJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to create task", http.StatusInternalServerError)
 		return
 	}
+
+	e.JobQueue <- int64(resID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

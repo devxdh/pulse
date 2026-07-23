@@ -7,6 +7,7 @@ import (
 
 	"github.com/devxdh/pulse/internal/cfg"
 	"github.com/devxdh/pulse/pkg/db"
+	apihandler "github.com/devxdh/pulse/pkg/handler"
 )
 
 func main() {
@@ -26,8 +27,12 @@ func main() {
 
 	db.InjectDDL(pool)
 
+	apiEnv := apihandler.New(pool, 100)
+	apiEnv.StartWorkerPool(4)
+
 	app := &application{
-		db: pool,
+		db:  pool,
+		api: apiEnv,
 	}
 
 	app.startServer()

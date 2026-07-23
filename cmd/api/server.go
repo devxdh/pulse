@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"time"
 
+	apihandler "github.com/devxdh/pulse/pkg/handler"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type application struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
+	api *apihandler.Env
 }
 
 func (app *application) startServer() {
