@@ -1,30 +1,36 @@
+-include .env
+export
+
 DB_SERVICE_NAME=postgres
+COMPOSE_FILE=docker-compose.yml
 
 start: check-db
 	go run ./cmd/api
 
-check-db:
-	@echo "Checking database status..."
-	@if [ -z "$$(docker compose ps -q $(DB_SERVICE_NAME))" ] || [ -z "$$(docker compose ps --filter "status=running" -q $(DB_SERVICE_NAME))" ]; then \
-		echo "Database is not running. Starting database..."; \
-		docker compose up -d; \
-		echo "Waiting for database to be ready..."; \
-		sleep 5; \
-	else \
-		echo "Database is already running."; \
-	fi
-
-test:
+# The test command now just swaps the compose file and runs tests.
+# Go natively reads TEST_DATABASE_URL because we included the .env file above!
+test: COMPOSE_FILE=docker-compose.test.yml
+test: check-db
 	go test -v ./...
+	docker compose -f $(COMPOSE_FILE) down
+
+check-db:
+	@echo "Ensuring database is running via $(COMPOSE_FILE)..."
+	@docker compose -f $(COMPOSE_FILE) up -d $(DB_SERVICE_NAME)
+	@echo "Waiting for database healthcheck..."
+	@until [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose -f $(COMPOSE_FILE) ps -q $(DB_SERVICE_NAME)))" = "healthy" ]; do \
+		sleep 0.2; \
+	done
+	@echo "Database is ready!"
 
 cover:
-	go cover -v ./...
+	go test -cover -v ./...
 
 start-db:
-	docker compose up -d
+	docker compose -f $(COMPOSE_FILE) up -d
 
 stop-db:
-	docker compose down
+	docker compose -f $(COMPOSE_FILE) down
 
 clean-db:
-	docker compose down -v
+	docker compose -f $(COMPOSE_FILE) down -v
