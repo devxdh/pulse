@@ -162,7 +162,9 @@ func setupDB(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("[DB_TEST_HELPER] failed to connect to db: %v", err)
 	}
 
-	db.InjectDDL(pool)
+	if err = db.InjectDDL(pool); err != nil {
+		t.Fatalf("[DB] failed to Inject DDL: %v", err)
+	}
 
 	_, err = pool.Exec(context.Background(), "TRUNCATE TABLE jobs RESTART IDENTITY CASCADE")
 	if err != nil {

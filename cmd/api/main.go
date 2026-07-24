@@ -25,7 +25,9 @@ func main() {
 	}
 	defer pool.Close()
 
-	db.InjectDDL(pool)
+	if err = db.InjectDDL(pool); err != nil {
+		log.Fatal(err)
+	}
 
 	apiEnv := apihandler.New(pool, 100)
 	apiEnv.StartWorkerPool(4)

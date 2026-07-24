@@ -17,6 +17,7 @@ type RateLimiter struct {
 	visitors map[string]*Visitor
 	rate     float64
 	capacity float64
+	now      func() time.Time
 }
 
 func NewRateLimiter(rate, capacity float64) *RateLimiter {
@@ -35,12 +36,12 @@ func (rl *RateLimiter) Allow(ip string) bool {
 	if !exists {
 		v = &Visitor{
 			tokens:   rl.capacity,
-			lastSeen: time.Now(),
+			lastSeen: rl.now(),
 		}
 		rl.visitors[ip] = v
 	}
 
-	now := time.Now()
+	now := rl.now()
 	elapsed := now.Sub(v.lastSeen).Seconds()
 
 	v.tokens += elapsed * rl.rate
