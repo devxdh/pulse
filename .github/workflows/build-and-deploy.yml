@@ -59,3 +59,26 @@ jobs:
           name: compiled-binary
           path: pulse-api
           retention-days: 1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test-and-build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pulse-api-binary
+
+      - name: Make Binary Executable
+        run: chmod +x pulse-api
+
+      - name: Deploy and Run
+        run: |
+          echo "Starting Deployment..."
+          ./pulse-api &
+          sleep 2
+          echo "Deployment successful!"
