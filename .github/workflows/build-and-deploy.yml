@@ -71,7 +71,7 @@ jobs:
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: pulse-api-binary
+          name: compiled-binary
 
       - name: Make Binary Executable
         run: chmod +x pulse-api
