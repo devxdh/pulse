@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: pulse_db
+          POSTGRES_DB: test_pulse_db
         ports:
           - 5432:5432
         options: >-
